@@ -7,12 +7,15 @@ module.exports = {
     loaders: [{
       test: /\.jsx$/,
       loader: 'jsx-loader?insertPragma=React.DOM&harmony'
+    },
+    { test: /\.css$/, 
+      loader: "style-loader!css-loader" 
     }]
   },
   externals: {
     'react': 'React'
   },
   resolve: {
-    extensions: ['', '.js', '.jsx']
+    extensions: ['', '.js', '.jsx', '.css']
   }
 }

@@ -10,7 +10,7 @@ var Chart = React.createClass({
     var el = this.getDOMNode();
     d3Chart.create(el, {
       width: '100%',
-      height: '300px'
+      height: '100px'
     }, this.getChartState());
   },
 

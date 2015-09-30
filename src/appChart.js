@@ -1,75 +1,155 @@
-// "_id": "55c79e711cbee48856a30886",
-// "number": 1,
-// "country": "Yemen",
-// "date": "2002-11-03T00:00:00.000Z",
-// "narrative": "In the first known US targeted assassination using a drone, a CIA Predator struck a car, killing 6 people.",
-// "town": "",
-// "location": "Marib Province",
-// "deaths": "6",
-// "deaths_min": "6",
-// "deaths_max": "6",
-// "civilians": "0",
-// "injuries": "",
-// "children": "",
-// "tweet_id": "278544689483890688",
-// "bureau_id": "YEM001",
-// "bij_summary_short": "In the first known US targeted assassination using a drone, a CIA Predator struck a car killing six al Qaeda suspects.",
-// "bij_link": "http://www.thebureauinvestigates.com/2012/03/29/yemen-reported-us-covert-actions-since-2001/",
-// "target": "",
-// "lat": "15.47467",
-// "lon": "45.322755",
-// "articles": [],
-// "names": ["Qa'id Salim Sinan al-Harithi, Abu Ahmad al-Hijazi, Salih Hussain Ali al-Nunu, Awsan Ahmad al-Tarihi, Munir Ahmad Abdallah al-Sauda, Adil Nasir al-Sauda'"]
 
-// use this as a keymap
-var global_strikes = {};
+var _ = require('lodash');
+
 var appChart = {};
-var Strike = function(attr) {
-  global_strikes[attr._id] = this;
-  attr.id = attr._id;
-  attr._id = undefined;
-  attr.forEach(function(key, value) {
-    this[key] = value;
-  }, this);
+
+
+appChart.create = function(el, props, state) {
+  console.log('appChart.create', el, props, state);
+  this.width = props.width;
+  this.height = props.height;
+  this.offsetMargin = 50;    //hardcoded
+  this.axisWidth = 2;       //hardcoded
+  this.graphWidth = this.width - this.offsetMargin;
+  this.graphHeight = this.height - this.offsetMargin;
+  this.scale = 3; //hardcoded
+
+  this.svg = d3.select(el).append('svg')
+    .attr('class', 'd3')
+    .attr('width', this.width + 'px')
+    .attr('height', this.height + 'px');
+  
+  if (!state.data.length) {
+    return;
+  } 
+  else {
+
+    this.update(el, state)
+  }
 };
 
-_.merge(Strike.prototype, {
-  getDeaths: function(){
-    return (+(this.deaths_min) + +(this.deaths_max)) / 2;
-  },
-  getYear: function(){
-    return (new Date(this.date)).getYear();
-  }
-});
+appChart.update = function(el, state) {
+  console.log('app update')
+  this.svg.remove();
+  this.svg = d3.select(el).append('svg')
+    .attr('class', 'd3')
+    .attr('width', this.width + 'px')
+    .attr('height', this.height + 'px');
 
-//death per year
-appChart.create = function(el, props, state) {
-  if (!state.data.strike) {
-    return;
-  } else {
-    console.log('commencing create'); // eslint-disable-line
-  }
-  var strikes = state.data.strike.map(function(stri_attr){
-    return new Strike(stri_attr);
-  });
-  var groupByYear = _.groupBy(strikes, function(strike){
+  // strike calculation
+  var groupByYear = _.groupBy(state.data, function(strike){
     return strike.getYear();
   });
-  var aggregateByYear = groupByYear.map(function (strike_arr, year) {
-    return strike_arr.reduce(function(count, stri, key) {
-      return count = count + stri.getDeaths();
-    }, 0);
-  });
+  var deathByYear = this.dataset = _.map(groupByYear, function (strike_arr, year) {
+    return {
+      year: year,
+      deaths: strike_arr.reduce(function(count, stri, key) {
+        return count = count + stri.getDeaths();
+      }, 0),
+    }
+  }, this);
+
+  // setting up axis
+  this.svg.append("line")
+    .attr("class", "x-axis")
+    .attr("x1", this.offsetMargin)
+    .attr("y1", appChart.height-this.offsetMargin + this.axisWidth)
+    .attr("x2", appChart.width)
+    .attr("y2", appChart.height-this.offsetMargin + this.axisWidth)
+    .attr('stroke', 'black')
+    .attr("stroke-width", this.axisWidth)
+  ;
+
+  this.svg.append("line")
+    .attr("class", "y-axis")
+    .attr("x1", this.offsetMargin)
+    .attr("y1", this.offsetMargin)
+    .attr("x2", this.offsetMargin)
+    .attr("y2", appChart.height-this.offsetMargin + this.axisWidth)
+    .attr('stroke', 'black')
+    .attr("stroke-width", this.axisWidth)
+  ;
 
 
-  var xRange = d3.scale.ordinal().rangeRoundBands([0, 1000], 0.1).domain(barData);
+  this.svg.selectAll('rect')
+    .data(_.pluck(this.dataset, 'deaths'))
+    .enter()
+    .append('rect')
+    .attr('x', function (deaths, i) {
+      return i * (appChart.graphWidth / appChart.dataset.length) + appChart.offsetMargin;
+    })
+    .attr('y', function (deaths, i) {
+      return appChart.graphHeight - deaths/appChart.scale;
+    })
+    .attr('width', function (deaths, i) {
+      return (appChart.graphWidth) / appChart.dataset.length - 4;
+    })
+    .attr('height', function (deaths) {
+      return deaths/appChart.scale;
+    })
+    .attr('fill', function (deaths) {
+      deaths = deaths > 255 ? deaths / 5 : 50;
+      return [
+        "rgb(", 
+        [255-2*deaths, 255-2*deaths, 255-deaths].map(function(d) {
+          return Math.round(d);
+        }).join(','),
+        ")"
+      ].join('');
+    })
+  ;
 
-  // to be continued...
+  this.svg.selectAll("text.xCoordinates")
+    .data(this.dataset)
+    .enter()
+    .append("text")
+    .attr('class', 'xCoordinates')
+    .attr("x", function (deathsData, i) {
+      return i * (appChart.graphWidth / appChart.dataset.length) + appChart.offsetMargin + (appChart.graphWidth / appChart.dataset.length - 4) / 2;
+    })
+    .attr('y', appChart.graphHeight + 20)
+    .text(function(deathsData) {
+      return deathsData.year;
+    })
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '15px')
+    .attr("text-anchor", "middle")
+    .attr('fill', '#555')
+  ;
 
-};
+  var maximumDeaths = this.dataset.sort(function(a, b){
+    return a.deaths < b.deaths ? 1 : -1;
+  })[0].deaths;
 
-appChart.update = function() {
+  var yScale = 250;
+  var maxY = Math.ceil(maximumDeaths / yScale) * yScale;
+  var scatterYAxis = [];
+  for (var i = yScale; i <= maxY; i = i + yScale ) {
+    scatterYAxis.push(i);
+  }
 
-}
+  this.svg.selectAll("text.yCoordinates")
+    .data(function(){
+      console.log('checking scatterYAxis', scatterYAxis)
+      return scatterYAxis;
+    })
+    .enter()
+    .append("text")
+    .attr('class', 'yCoordinates')
+    .attr('y', function(yCoords) {
+      console.log('plot on y', appChart.graphHeight, yCoords);
+      return appChart.graphHeight - (yCoords/appChart.scale);
+    })
+    .attr("x", appChart.offsetMargin - 20)
+    .text(function(yCoords) {
+      return yCoords;
+    })
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '15px')
+    .attr("text-anchor", "middle")
+    .attr('fill', '#555')
+  ;
+
+}; 
 
 module.exports = appChart;
