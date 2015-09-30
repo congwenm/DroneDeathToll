@@ -1,25 +1,23 @@
-body { 
-  background: #0dc5c1; 
-}
-
 .loader {
   overflow: hidden;
   font-size: 10px;
   margin: 50px auto;
   text-indent: -9999em;
-  width: 11em;
-  height: 11em;
+  width: 4em;
+  height: 4em;
   border-radius: 50%;
-  background: #FFF;
-  background: linear-gradient(to right, #FFF 10%, rgba(255, 255, 255, 0) 42%);
-  position: relative;
+  background: #888;
+  background: linear-gradient(to right, #888 10%, rgba(255, 255, 255, 0) 42%);
+  position: absolute;
+  left: 200px;
+  top: 0px;
   animation: load3 1.4s infinite linear;
   transform: translateZ(0);
 }
 .loader:before {
   width: 50%;
   height: 50%;
-  background: #FFF;
+  background: #888;
   border-radius: 100% 0 0 0;
   position: absolute;
   top: 0;

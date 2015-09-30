@@ -7,19 +7,22 @@ var App = React.createClass({
   getInitialState: function () {
     return {
       data: [],
-      loading: false,
+      loading: true,
     };
   },
 
   componentDidMount: function() {
     jQuery.get('../src/dronestre.json', function(json){
       console.log('got json', json); // eslint-disable-line
-      this.setState({
-        data: json.strike.map(function(strike_attr) {
-          return new Strike(strike_attr);
-        }),
-      });
-      
+      window.setTimeout(function(){
+        this.setState({
+          data: json.strike.map(function(strike_attr) {
+            return new Strike(strike_attr);
+          }),
+          loading: false,
+        });
+
+      }.bind(this), 1500);
     }.bind(this));
 
 
@@ -54,19 +57,23 @@ var App = React.createClass({
       {
         (this.state.loading) && <div className="loader">Loading...</div>
       }
-      <button onClick={this.randomDeaths}>Random Deaths</button>
+      <button onClick={this.randomDeaths} style={{position: 'absolute'}} disabled={this.state.loading}>
+        Random Death per Drone
+      </button><br/>
     </div>;
   },
 
   randomDeaths: function () {
     this.setState({loading: true});
-    this.state.data.map(function(stri) {
-      stri.generateRandomDeaths(0, 10)
-    });
-    this.forceUpdate();
+    
+    
     window.setTimeout(function(){
+      this.state.data.map(function(stri) {
+        stri.generateRandomDeaths(0, 12)
+      });
       this.setState({loading: false});
-    }.bind(this), 3000);
+      this.forceUpdate();
+    }.bind(this), 1000);
   },
 })
 

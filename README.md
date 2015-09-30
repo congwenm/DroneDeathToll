@@ -12,3 +12,7 @@ Now launch the example:
 ```sh
 $ npm run start
 ```
+
+# To launch Drone Death toll
+go to [http://localhost:8080](http://localhost:8080) in chrome.
+
